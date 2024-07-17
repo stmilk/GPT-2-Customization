@@ -1,0 +1,15 @@
+data_dirs:
+  - 'folder1'
+  - 'folder2'
+  - 'folder3'
+  - 'folder4'
+  - 'folder5'
+
+output_dirs:
+  - 'tokenized_datasets_folder1'
+  - 'tokenized_datasets_folder2'
+  - 'tokenized_datasets_folder3'
+  - 'tokenized_datasets_folder4'
+  - 'tokenized_datasets_folder5'
+
+script_path: 'process_folder.py'

@@ -4,7 +4,7 @@ import chardet
 from datasets import Dataset, DatasetDict
 import sys
 from sklearn.model_selection import train_test_split
-from collections import Counter
+from collections import Counter, defaultdict
 
 def fullwidth_to_halfwidth(text):
     result = []
@@ -40,6 +40,7 @@ def read_and_tokenize(file_path, max_length=512):
 def load_and_tokenize_datasets(data_dir, max_length=512):
     all_texts = []
     skipped_files = []
+    file_token_sets = defaultdict(set)
 
     for root, dirs, files in os.walk(data_dir):
         for file in files:
@@ -48,12 +49,17 @@ def load_and_tokenize_datasets(data_dir, max_length=512):
                 try:
                     tokenized_sentences = read_and_tokenize(file_path, max_length)
                     all_texts.extend(tokenized_sentences)
+                    tokens_in_file = set()
+                    for sentence in tokenized_sentences:
+                        tokens_in_file.update(sentence.split())
+                    for token in tokens_in_file:
+                        file_token_sets[token].add(file_path)
                     print(f"Successfully processed file: {file_path}")
                 except (RuntimeError, UnicodeDecodeError) as e:
                     skipped_files.append(file_path)
                     print(f"Could not decode file {file_path}: {e}")
 
-    return all_texts, skipped_files
+    return all_texts, skipped_files, file_token_sets
 
 def split_datasets(all_texts, train_size=0.8, val_size=0.1):
     train_texts, temp_texts = train_test_split(all_texts, train_size=train_size, random_state=42)
@@ -78,7 +84,7 @@ def save_datasets(train_texts, val_texts, test_texts, output_dir):
     
     print(f"Datasets saved to {output_dir}")
 
-def save_token_frequencies(train_texts, val_texts, test_texts, output_file):
+def save_token_frequencies(train_texts, val_texts, test_texts, file_token_sets, output_file):
     token_counter = Counter()
     
     for dataset in [train_texts, val_texts, test_texts]:
@@ -88,7 +94,8 @@ def save_token_frequencies(train_texts, val_texts, test_texts, output_file):
     
     with open(output_file, 'w', encoding='utf-8') as f:
         for token, freq in token_counter.items():
-            f.write(f"{token}: {freq}\n")
+            file_count = len(file_token_sets[token])
+            f.write(f"{token}: {freq}, in {file_count} files\n")
     
     print(f"Token frequencies saved to {output_file}")
 
@@ -101,14 +108,14 @@ if __name__ == "__main__":
     output_dir = sys.argv[2]
 
     print(f"Starting processing for {data_dir}")
-    all_texts, skipped_files = load_and_tokenize_datasets(data_dir)
+    all_texts, skipped_files, file_token_sets = load_and_tokenize_datasets(data_dir)
     
     train_texts, val_texts, test_texts = split_datasets(all_texts)
     
     save_datasets(train_texts, val_texts, test_texts, output_dir)
     
     token_freq_file = os.path.join(output_dir, 'token_frequencies.txt')
-    save_token_frequencies(train_texts, val_texts, test_texts, token_freq_file)
+    save_token_frequencies(train_texts, val_texts, test_texts, file_token_sets, token_freq_file)
     
     print(f"Train texts: {len(train_texts)}")
     print(f"Validation texts: {len(val_texts)}")

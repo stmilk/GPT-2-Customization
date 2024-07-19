@@ -109,7 +109,6 @@ if __name__ == "__main__":
     
     token_freq_file = os.path.join(output_dir, 'token_frequencies.txt')
     save_token_frequencies(train_texts, val_texts, test_texts, token_freq_file)
-    
     print(f"Train texts: {len(train_texts)}")
     print(f"Validation texts: {len(val_texts)}")
     print(f"Test texts: {len(test_texts)}")

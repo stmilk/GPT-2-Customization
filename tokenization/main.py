@@ -14,12 +14,12 @@ def load_config(config_path):
     return config
 
 if __name__ == "__main__":
+
     # Load configuration from the specified file
-    config = load_config(args.config)
+    config = load_config('config.yml')
     data_dirs = config['data_dirs']
     output_dirs = config['output_dirs']
     script_path = config['script_path']
-    print(data_dirs)
 
     # Use ProcessPoolExecutor to run the process_folder function in parallel
     with ProcessPoolExecutor() as executor:

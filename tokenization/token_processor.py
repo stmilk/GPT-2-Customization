@@ -158,6 +158,7 @@ class TokenProcessor:
                 if j not in self.combined_counter:
                     self.combined_counter[j] = 1
             del self.combined_counter[i]
+        combined_counter["<unk>"] = 1
 
     def save_combined_counter(self, output_file):
         """

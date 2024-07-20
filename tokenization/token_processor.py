@@ -7,7 +7,7 @@ class TokenProcessor:
     on the token data, including combining frequencies, cleaning, and saving the results.
     """
 
-    def __init__(self, base_dir):
+    def __init__(self, base_dir, low_frequency_threshold=50, min_document_appearance=15):
         """
         Initialize the TokenProcessor with the base directory containing the tokenized datasets.
         
@@ -24,6 +24,8 @@ class TokenProcessor:
         ]
         self.combined_counter = Counter()
         self.combined_token_file_counter = Counter()
+        self.low_frequency_threshold = 50
+        self.min_document_appearance = 15
 
     def read_token_frequencies(self, file_path):
         """
@@ -118,19 +120,19 @@ class TokenProcessor:
     def clean_combined_counter(self):
         """
         Clean the combined counter by removing tokens based on specific criteria:
-        1. Tokens with a frequency less than or equal to 50.
+        1. Tokens with a frequency less than or equal to self.low_frequency_threshold.
         2. Tokens longer than 1 character that contain non-Chinese characters.
         3. Tokens longer than 1 character that contain digits.
-        4. Tokens that appear in fewer than 15 documents.
+        4. Tokens that appear in fewer than self.min_document_appearance documents.
         5. Remove the tokens that meet the above criteria from the combined counter and add single characters not in the combined counter.
         """
         delet = []
 
-        # 1. Remove tokens with frequency <= 50
+        # 1. Remove tokens with frequency <= self.low_frequency_threshold
         for i in self.combined_counter:
-            if self.combined_counter[i] <= 50:
+            if self.combined_counter[i] <= self.low_frequency_threshold:
                 delet.append(i)
-
+        
         # 2. Remove tokens longer than 1 character containing non-Chinese characters
         for i in self.combined_counter:
             if len(i) > 1:
@@ -147,9 +149,9 @@ class TokenProcessor:
                         delet.append(i)
                         break
 
-        # 4. Remove tokens appearing in fewer than 15 documents
+        # 4. Remove tokens appearing in fewer than self.min_document_appearance documents
         for i in self.combined_token_file_counter:
-            if self.combined_token_file_counter[i] < 15:
+            if self.combined_token_file_counter[i] < self.min_document_appearance:
                 delet.append(i)
 
         # 5. Remove the tokens that meet the above criteria and add single characters not in the combined counter
@@ -158,7 +160,7 @@ class TokenProcessor:
                 if j not in self.combined_counter:
                     self.combined_counter[j] = 1
             del self.combined_counter[i]
-        combined_counter["<unk>"] = 1
+        self.combined_counter["<unk>"] = 1
 
     def save_combined_counter(self, output_file):
         """

@@ -10,7 +10,7 @@ Developing a customized small-scale Chinese GPT-2 model for use on a personal co
 - **Researching and Implementing Custom Tokenizer**: Investigating methods to create a custom tokenizer table optimized for Chinese text, and developing a tokenizer that leverages this table to preprocess and tokenize the Chinese text data.
 
 ### Ongoing Tasks
-- **Training model and Testing Model Size
+- **Training model and Testing Model Size**
 
 
 ## Development Plan

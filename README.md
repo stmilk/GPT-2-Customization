@@ -7,9 +7,11 @@ Developing a customized small-scale Chinese GPT-2 model for use on a personal co
 - **Project Initialization**: Successfully created the local Git repository and set up the basic project structure.
 - **Environment Setup**: Completed the basic environment configuration, including Python and necessary dependencies installation.
 - **Model Preparation**: Collecting and preprocessing the data needed for training a small-scale Chinese GPT-2 model.
+- **Researching and Implementing Custom Tokenizer**: Investigating methods to create a custom tokenizer table optimized for Chinese text, and developing a tokenizer that leverages this table to preprocess and tokenize the Chinese text data.
 
 ### Ongoing Tasks
-- **Researching and Implementing Custom Tokenizer**: Investigating methods to create a custom tokenizer table optimized for Chinese text, and developing a tokenizer that leverages this table to preprocess and tokenize the Chinese text data.
+- **Training model and Testing Model Size
+
 
 ## Development Plan
 - Researching tokenization methods to optimize the model size.

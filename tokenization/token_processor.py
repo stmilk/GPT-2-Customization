@@ -212,6 +212,15 @@ class CustomChineseTokenizer:
     
     def get_vocab(self):
         return self.vocab
+    
+    def get_vocab_num(self):
+        return len(self.vocab)
+        
+    def get_bos_token: 
+        return self.vocab["bos_token"]
+
+    def get_eos_token: 
+        return self.vocab["eos_token"]
 
     def save_vocabulary(self, save_directory):
         vocab_file = os.path.join(save_directory, 'vocab.json')
@@ -231,14 +240,12 @@ class CustomChineseTokenizer:
                 token_ids = token_ids[:max_length]
         
         attention_mask = [1 if id != self.vocab[self.special_tokens['pad_token']] else 0 for id in token_ids]
-        special_tokens_mask = [1 if token in self.special_tokens.values() else 0 for token in tokens]
-        if padding_length > 0:
-            special_tokens_mask = special_tokens_mask + [1] * padding_length
+        labels = token_ids.copy()
         
         return {
             'input_ids': token_ids,
             'attention_mask': attention_mask,
-            'special_tokens_mask': special_tokens_mask
+            'labels': labels
         }
 
 def read_file_with_multiple_encodings(file_path):
@@ -289,13 +296,13 @@ def tokenize_batch(examples, tokenizer, max_length=512):
     tokenized_examples = {
         'input_ids': [],
         'attention_mask': [],
-        'special_tokens_mask': []
+        'labels': []
     }
     for text in examples['text']:
         tokenized = tokenizer(text, padding=True, truncation=True, max_length=max_length)
         tokenized_examples['input_ids'].append(tokenized['input_ids'])
         tokenized_examples['attention_mask'].append(tokenized['attention_mask'])
-        tokenized_examples['special_tokens_mask'].append(tokenized['special_tokens_mask'])
+        tokenized_examples['labels'].append(tokenized['labels'])
     return tokenized_examples
     
 def load_vocab_from_txt():

@@ -1,4 +1,5 @@
 import os
+import re
 import json
 from collections import Counter
 import random
@@ -216,11 +217,11 @@ class CustomChineseTokenizer:
     def get_vocab_num(self):
         return len(self.vocab)
         
-    def get_bos_token: 
-        return self.vocab["bos_token"]
+    def get_bos_token(self): 
+        return self.vocab["[BOS]"]
 
-    def get_eos_token: 
-        return self.vocab["eos_token"]
+    def get_eos_token(self): 
+        return self.vocab["[EOS]"]
 
     def save_vocabulary(self, save_directory):
         vocab_file = os.path.join(save_directory, 'vocab.json')
@@ -228,8 +229,7 @@ class CustomChineseTokenizer:
             json.dump(self.vocab, f, ensure_ascii=False)
         return (vocab_file,)
 
-    def __call__(self, text, padding=True, truncation=True, max_length=512):
-        tokens = self.tokenize(text)
+    def __call__(self, tokens, padding=True, truncation=True, max_length=512):
         token_ids = [self.convert_token_to_id(token) for token in tokens]
 
         if padding:
@@ -257,24 +257,83 @@ def read_file_with_multiple_encodings(file_path):
         except (UnicodeDecodeError, TypeError):
             continue
     raise RuntimeError(f"Could not decode file {file_path} with available encodings.")
+    
 
-def load_and_split_text_files(data_dirs):
+
+def clean_text(line):
+    cleaned_line = re.sub(r'[\u3000\t\r\n\x0b\x0c]|<br/>', '', line)
+    return cleaned_line.strip()
+
+def is_valid_line(line):
+    chinese_ranges = [
+        (0x4E00, 0x9FFF),   # Basic Chinese characters
+        (0x3400, 0x4DBF),   # Extension A
+        (0x20000, 0x2A6DF), # Extension B
+        (0x2A700, 0x2B73F), # Extension C
+        (0x2B740, 0x2B81F), # Extension D
+        (0x2B820, 0x2CEA1), # Extension E
+        (0x2CEB0, 0x2EBE0), # Extension F
+        (0xF900, 0xFAFF),   # Compatibility characters
+        (0x2F800, 0x2FA1F)  # Compatibility extensions
+    ]
+    
+    def is_chinese(char):
+        return any(start <= ord(char) <= end for start, end in chinese_ranges)
+    
+    chinese_chars = [char for char in line if is_chinese(char)]
+    return len(chinese_chars) >= len(line) / 2
+
+def split_sentences(text):
+    sentences = re.split(r'([。!?][\"“”?!]?)', text)
+    sentences = [sentences[i] + (sentences[i+1] if i+1 < len(sentences) else '') for i in range(0, len(sentences), 2)]
+    return [sentence for sentence in sentences if sentence.strip()]
+
+def reassemble_text(sentences, tokenizer, max_length=512):
+    chunks = []
+    current_chunk = []
+    for sentence in sentences:
+        tokenized_sentence = tokenizer.tokenize(sentence.strip())
+        if len(current_chunk) + len(tokenized_sentence) <= max_length:
+            current_chunk.extend(tokenized_sentence)
+        else:
+            chunks.append(current_chunk)
+            current_chunk = tokenized_sentence
+    if current_chunk:
+        chunks.append(current_chunk)
+    
+    return chunks
+
+def tokenize_and_split_texts(texts, tokenizer, max_length=512):
+    tokenized_sentences = []
+    for text in texts:
+        sentences = split_sentences(text)
+        chunks = reassemble_text(sentences, tokenizer, max_length)
+        tokenized_sentences.extend(chunks)
+    return tokenized_sentences
+
+def load_and_preprocess_text_files(data_dirs, tokenizer, max_length=512):
     texts = []
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     for data_dir in data_dirs:
         data_dir = os.path.join(base_dir, data_dir)
         for root, _, files in os.walk(data_dir):
             for filename in files:
+                print(filename)
                 if filename.endswith('.txt'):
                     try:
                         file_path = os.path.join(root, filename)
                         file_content = read_file_with_multiple_encodings(file_path)
                         lines = file_content.split('\n')
-                        lines = [line for line in lines if line.strip()]
-                        texts.extend(lines)
+                        cleaned_lines = [clean_text(line) for line in lines]
+                        valid_lines = [line for line in cleaned_lines if line and is_valid_line(line)]
+                        full_text = ''.join(valid_lines)
+                        texts.append(full_text)
                     except (RuntimeError, UnicodeDecodeError) as e:
                         print(f"Could not decode file {filename}: {e}")
-    return texts
+    
+    tokenized_texts = tokenize_and_split_texts(texts, tokenizer, max_length)
+    return tokenized_texts
+
 
 def split_dataset(texts, train_size=0.8, val_size=0.1):
     random.shuffle(texts)

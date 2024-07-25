@@ -2,7 +2,7 @@ import os
 import yaml
 import argparse
 from concurrent.futures import ProcessPoolExecutor
-from token_processor import TokenFrequenciesProcessor, CustomChineseTokenizer, read_file_with_multiple_encodings, load_and_split_text_files, split_dataset, tokenize_batch, load_vocab_from_txt
+from token_processor import TokenFrequenciesProcessor, CustomChineseTokenizer, read_file_with_multiple_encodings, load_and_preprocess_text_files, split_dataset, tokenize_batch, load_vocab_from_txt
 
 
 
@@ -39,9 +39,8 @@ if __name__ == "__main__":
     processor.clean_combined_counter()
     
     # Use CustomChineseTokenizer to make customized token table  
-    texts = load_and_split_text_files(data_dirs)
+    tokenizer = CustomChineseTokenizer(load_vocab_from_txt())
+    texts = load_and_preprocess_text_files(data_dirs, tokenizer)
     dataset = split_dataset(texts)
-    vocab = load_vocab_from_txt()
-    tokenizer = CustomChineseTokenizer(vocab)
     tokenized_datasets = dataset.map(lambda examples: tokenize_batch(examples, tokenizer), batched=True, remove_columns=["text"])
     tokenized_datasets.save_to_disk(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data/data_preprocess"))
